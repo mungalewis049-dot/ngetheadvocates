@@ -1,42 +1,60 @@
-const Database = require('better-sqlite3');
-const path = require('path');
-const fs = require('fs');
+const { createClient } = require('@libsql/client');
 
-// On Render, DB_PATH points at the mounted persistent disk (see render.yaml)
-// so the database survives redeploys. Locally it falls back to ./data/.
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'data', 'ngethe.db');
-fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+// Turso (libSQL) connection. Locally, if TURSO_DATABASE_URL is not set, this
+// falls back to a local file so you can still develop without a Turso account.
+const url = process.env.TURSO_DATABASE_URL || 'file:./data/ngethe.db';
+const authToken = process.env.TURSO_AUTH_TOKEN || undefined;
 
-const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
+const client = createClient({ url, authToken });
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS posts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT NOT NULL,
-  category TEXT NOT NULL,
-  image_url TEXT,
-  body TEXT NOT NULL,
-  published INTEGER NOT NULL DEFAULT 1,
-  updated_at TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
+async function init() {
+  await client.batch(
+    [
+      `CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        image_url TEXT,
+        body TEXT NOT NULL,
+        published INTEGER NOT NULL DEFAULT 1,
+        updated_at TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        full_name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT,
+        subject TEXT,
+        message TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`,
+      `CREATE TABLE IF NOT EXISTS activity (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT NOT NULL,
+        time TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ],
+    'write'
+  );
+}
 
-CREATE TABLE IF NOT EXISTS messages (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  full_name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  phone TEXT,
-  subject TEXT,
-  message TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
+// Thin helpers so route code reads close to the old better-sqlite3 style,
+// just with await. All three take a SQL string and a flat array of params.
 
-CREATE TABLE IF NOT EXISTS activity (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  text TEXT NOT NULL,
-  time TEXT NOT NULL DEFAULT (datetime('now'))
-);
-`);
+async function get(sql, params = []) {
+  const result = await client.execute({ sql, args: params });
+  return result.rows[0] || null;
+}
 
-module.exports = db;
+async function all(sql, params = []) {
+  const result = await client.execute({ sql, args: params });
+  return result.rows;
+}
+
+async function run(sql, params = []) {
+  const result = await client.execute({ sql, args: params });
+  return { lastInsertRowid: result.lastInsertRowid, changes: result.rowsAffected };
+}
+
+module.exports = { init, get, all, run, client };

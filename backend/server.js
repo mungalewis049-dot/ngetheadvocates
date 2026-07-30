@@ -30,35 +30,42 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/chat', chatRoutes);
 
 // Dashboard stats (admin only)
-app.get('/api/dashboard', requireAuth, (req, res) => {
-  const { totalPosts, published } = db.prepare(
-    `SELECT COUNT(*) AS totalPosts, SUM(published) AS published FROM posts`
-  ).get();
+app.get('/api/dashboard', requireAuth, async (req, res, next) => {
+  try {
+    const totalsRow = await db.get(
+      `SELECT COUNT(*) AS totalPosts, SUM(published) AS published FROM posts`
+    );
+    const totalPosts = totalsRow.totalPosts || 0;
+    const published = totalsRow.published || 0;
 
-  const totalMessages = db.prepare(`SELECT COUNT(*) AS count FROM messages`).get().count;
+    const totalMessagesRow = await db.get(`SELECT COUNT(*) AS count FROM messages`);
 
-  const weekAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const messagesThisWeek = db.prepare(
-    `SELECT COUNT(*) AS count FROM messages WHERE created_at >= ?`
-  ).get(weekAgoIso).count;
+    const weekAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const messagesThisWeekRow = await db.get(
+      `SELECT COUNT(*) AS count FROM messages WHERE created_at >= ?`,
+      [weekAgoIso]
+    );
 
-  const byCategoryRows = db.prepare(
-    `SELECT category, COUNT(*) AS count FROM posts GROUP BY category`
-  ).all();
-  const byCategory = {};
-  byCategoryRows.forEach((row) => { byCategory[row.category] = row.count; });
+    const byCategoryRows = await db.all(
+      `SELECT category, COUNT(*) AS count FROM posts GROUP BY category`
+    );
+    const byCategory = {};
+    byCategoryRows.forEach((row) => { byCategory[row.category] = row.count; });
 
-  const activity = db.prepare('SELECT * FROM activity ORDER BY id DESC LIMIT 30').all();
+    const activity = await db.all('SELECT * FROM activity ORDER BY id DESC LIMIT 30');
 
-  res.json({
-    totalPosts: totalPosts || 0,
-    published: published || 0,
-    drafts: (totalPosts || 0) - (published || 0),
-    totalMessages,
-    messagesThisWeek,
-    byCategory,
-    activity
-  });
+    res.json({
+      totalPosts,
+      published,
+      drafts: totalPosts - published,
+      totalMessages: totalMessagesRow.count,
+      messagesThisWeek: messagesThisWeekRow.count,
+      byCategory,
+      activity
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -79,4 +86,11 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Ngethe & Company backend running on port ${PORT}`));
+db.init()
+  .then(() => {
+    app.listen(PORT, () => console.log(`Ngethe & Company backend running on port ${PORT}`));
+  })
+  .catch((err) => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });

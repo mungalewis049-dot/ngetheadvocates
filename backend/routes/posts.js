@@ -36,96 +36,120 @@ function parsePagination(query, maxLimit = 100) {
 // ---------- PUBLIC ----------
 // GET /api/posts -> published posts only, for the live site
 // Supports ?category=&page=&limit=
-router.get('/', (req, res) => {
-  const { limit, page, offset } = parsePagination(req.query);
-  const { category } = req.query;
+router.get('/', async (req, res, next) => {
+  try {
+    const { limit, page, offset } = parsePagination(req.query);
+    const { category } = req.query;
 
-  const where = category
-    ? 'WHERE published = 1 AND category = ?'
-    : 'WHERE published = 1';
-  const params = category ? [category] : [];
+    const where = category
+      ? 'WHERE published = 1 AND category = ?'
+      : 'WHERE published = 1';
+    const params = category ? [category] : [];
 
-  const total = db.prepare(`SELECT COUNT(*) AS count FROM posts ${where}`).get(...params).count;
-  const posts = db.prepare(
-    `SELECT * FROM posts ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`
-  ).all(...params, limit, offset);
+    const totalRow = await db.get(`SELECT COUNT(*) AS count FROM posts ${where}`, params);
+    const posts = await db.all(
+      `SELECT * FROM posts ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
 
-  res.json({
-    posts,
-    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
-  });
+    res.json({
+      posts,
+      pagination: { page, limit, total: totalRow.count, totalPages: Math.ceil(totalRow.count / limit) }
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // ---------- ADMIN ----------
 // GET /api/posts/admin -> all posts, published + drafts
 // Supports ?category=&published=&page=&limit=
-router.get('/admin', requireAuth, (req, res) => {
-  const { limit, page, offset } = parsePagination(req.query, 500);
-  const { category, published } = req.query;
+router.get('/admin', requireAuth, async (req, res, next) => {
+  try {
+    const { limit, page, offset } = parsePagination(req.query, 500);
+    const { category, published } = req.query;
 
-  const clauses = [];
-  const params = [];
-  if (category) { clauses.push('category = ?'); params.push(category); }
-  if (published === '0' || published === '1') { clauses.push('published = ?'); params.push(Number(published)); }
-  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+    const clauses = [];
+    const params = [];
+    if (category) { clauses.push('category = ?'); params.push(category); }
+    if (published === '0' || published === '1') { clauses.push('published = ?'); params.push(Number(published)); }
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
-  const total = db.prepare(`SELECT COUNT(*) AS count FROM posts ${where}`).get(...params).count;
-  const posts = db.prepare(
-    `SELECT * FROM posts ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`
-  ).all(...params, limit, offset);
+    const totalRow = await db.get(`SELECT COUNT(*) AS count FROM posts ${where}`, params);
+    const posts = await db.all(
+      `SELECT * FROM posts ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
 
-  res.json({
-    posts,
-    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
-  });
+    res.json({
+      posts,
+      pagination: { page, limit, total: totalRow.count, totalPages: Math.ceil(totalRow.count / limit) }
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // POST /api/posts -> create
-router.post('/', requireAuth, (req, res) => {
-  const { title, category, image_url, body, published } = req.body || {};
-  if (!title || !category || !body) {
-    return res.status(400).json({ error: 'Title, category, and body are required' });
-  }
-  const cleanBody = sanitizeBody(body);
-  const today = new Date().toISOString().slice(0, 10);
-  const info = db.prepare(
-    `INSERT INTO posts (title, category, image_url, body, published, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(title, category, image_url || null, cleanBody, published ? 1 : 0, today);
+router.post('/', requireAuth, async (req, res, next) => {
+  try {
+    const { title, category, image_url, body, published } = req.body || {};
+    if (!title || !category || !body) {
+      return res.status(400).json({ error: 'Title, category, and body are required' });
+    }
+    const cleanBody = sanitizeBody(body);
+    const today = new Date().toISOString().slice(0, 10);
+    const info = await db.run(
+      `INSERT INTO posts (title, category, image_url, body, published, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [title, category, image_url || null, cleanBody, published ? 1 : 0, today]
+    );
 
-  logActivity(`Post created: "${title}"`);
-  const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json(post);
+    await logActivity(`Post created: "${title}"`);
+    const post = await db.get('SELECT * FROM posts WHERE id = ?', [info.lastInsertRowid]);
+    res.status(201).json(post);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // PUT /api/posts/:id -> update
-router.put('/:id', requireAuth, (req, res) => {
-  const existing = db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Post not found' });
+router.put('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const existing = await db.get('SELECT * FROM posts WHERE id = ?', [req.params.id]);
+    if (!existing) return res.status(404).json({ error: 'Post not found' });
 
-  const { title, category, image_url, body, published } = req.body || {};
-  if (!title || !category || !body) {
-    return res.status(400).json({ error: 'Title, category, and body are required' });
+    const { title, category, image_url, body, published } = req.body || {};
+    if (!title || !category || !body) {
+      return res.status(400).json({ error: 'Title, category, and body are required' });
+    }
+    const cleanBody = sanitizeBody(body);
+    const today = new Date().toISOString().slice(0, 10);
+    await db.run(
+      `UPDATE posts SET title=?, category=?, image_url=?, body=?, published=?, updated_at=? WHERE id=?`,
+      [title, category, image_url || null, cleanBody, published ? 1 : 0, today, req.params.id]
+    );
+
+    await logActivity(`Post updated: "${title}"`);
+    const post = await db.get('SELECT * FROM posts WHERE id = ?', [req.params.id]);
+    res.json(post);
+  } catch (err) {
+    next(err);
   }
-  const cleanBody = sanitizeBody(body);
-  const today = new Date().toISOString().slice(0, 10);
-  db.prepare(
-    `UPDATE posts SET title=?, category=?, image_url=?, body=?, published=?, updated_at=? WHERE id=?`
-  ).run(title, category, image_url || null, cleanBody, published ? 1 : 0, today, req.params.id);
-
-  logActivity(`Post updated: "${title}"`);
-  const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
-  res.json(post);
 });
 
 // DELETE /api/posts/:id
-router.delete('/:id', requireAuth, (req, res) => {
-  const existing = db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Post not found' });
+router.delete('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const existing = await db.get('SELECT * FROM posts WHERE id = ?', [req.params.id]);
+    if (!existing) return res.status(404).json({ error: 'Post not found' });
 
-  db.prepare('DELETE FROM posts WHERE id = ?').run(req.params.id);
-  logActivity(`Post deleted: "${existing.title}"`);
-  res.status(204).end();
+    await db.run('DELETE FROM posts WHERE id = ?', [req.params.id]);
+    await logActivity(`Post deleted: "${existing.title}"`);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

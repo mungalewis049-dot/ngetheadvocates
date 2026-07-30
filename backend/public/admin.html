@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Panel Preview | Ngethe & Company Advocates</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/playfair-display@5.0.12/index.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.16/index.min.css" />
+<style>
+  :root{
+    --green-deep:#0a2818; --green:#0f3d24; --green-light:#1a5c3a;
+    --gold:#d4af37; --gold-bright:#f4d03f; --gold-pale:#faf0d7;
+    --cream:#faf7f2; --text:#1a1a1a; --muted:#6b6b63; --border:#e4ded0;
+    --danger:#a63d33; --success:#1a5c3a; --paper:#fffdf9;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);}
+  h1,h2,h3{font-family:'Playfair Display',serif;}
+
+  /* Ribbon banner - honest about what this is */
+  .preview-ribbon{
+    background:var(--gold-pale);color:#5c4a12;font-size:.8rem;text-align:center;
+    padding:.55rem 1rem;border-bottom:1px solid var(--gold);letter-spacing:.2px;
+  }
+  .preview-ribbon strong{color:var(--green-deep);}
+
+  header{
+    background:var(--green-deep);color:var(--cream);padding:1.1rem 1.8rem;
+    display:flex;align-items:center;justify-content:space-between;
+    border-bottom:2px solid var(--gold);
+  }
+  header .brand{display:flex;flex-direction:column;}
+  header h1{font-size:1.25rem;margin:0;letter-spacing:.3px;font-weight:600;}
+  header .sub{color:var(--gold-bright);font-size:.72rem;letter-spacing:1.8px;text-transform:uppercase;margin-top:.15rem;}
+  #logoutBtn{background:transparent;border:1px solid var(--gold);color:var(--gold-bright);padding:.55rem 1.1rem;border-radius:3px;cursor:pointer;font-size:.85rem;font-family:'Inter',sans-serif;}
+  #logoutBtn:hover{background:var(--gold);color:var(--green-deep);}
+  .hidden{display:none !important;}
+
+  main{max-width:1080px;margin:0 auto;padding:2rem 1.5rem;}
+
+  /* Login */
+  #loginScreen{max-width:400px;margin:4.5rem auto;background:var(--paper);padding:2.5rem;border-radius:6px;border:1px solid var(--border);box-shadow:0 10px 40px rgba(10,40,24,.08);}
+  #loginScreen .eyebrow{color:var(--gold-dark,#b8941f);font-size:.72rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;display:block;margin-bottom:.5rem;}
+  #loginScreen h2{margin:0 0 1.5rem;color:var(--green-deep);font-size:1.5rem;}
+  .field{margin-bottom:1.1rem;}
+  .field label{display:block;font-size:.75rem;font-weight:700;margin-bottom:.4rem;color:var(--muted);letter-spacing:.4px;text-transform:uppercase;}
+  .field input, .field textarea, .field select{
+    width:100%;padding:.7rem .8rem;border:1px solid var(--border);border-radius:4px;font-size:.95rem;font-family:'Inter',sans-serif;background:#fff;
+  }
+  .field input:focus, .field textarea:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--gold);}
+  .field textarea{min-height:150px;resize:vertical;line-height:1.5;}
+  .hint{font-size:.78rem;color:var(--muted);margin-top:.9rem;line-height:1.5;background:var(--gold-pale);padding:.7rem .85rem;border-radius:4px;}
+  .hint code{background:rgba(10,40,24,.06);padding:.1rem .35rem;border-radius:3px;font-size:.85em;}
+
+  button.primary{background:var(--green-deep);color:var(--cream);border:none;padding:.75rem 1.3rem;border-radius:4px;cursor:pointer;font-weight:600;font-size:.92rem;font-family:'Inter',sans-serif;letter-spacing:.2px;}
+  button.primary:hover{background:var(--green);}
+  button.secondary{background:#fff;border:1px solid var(--border);padding:.65rem 1.1rem;border-radius:4px;cursor:pointer;font-size:.88rem;font-family:'Inter',sans-serif;}
+  button.secondary:hover{border-color:var(--green);color:var(--green);}
+  button.danger{background:#fff;border:1px solid var(--danger);color:var(--danger);padding:.45rem .85rem;border-radius:4px;cursor:pointer;font-size:.8rem;font-family:'Inter',sans-serif;}
+  button.danger:hover{background:var(--danger);color:#fff;}
+  .error-msg{color:var(--danger);font-size:.85rem;margin-top:.7rem;min-height:1.1em;}
+  .success-msg{color:var(--success);font-size:.85rem;margin-top:.7rem;min-height:1.1em;}
+
+  .tabs{display:flex;gap:.3rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);}
+  .tab-btn{background:none;border:none;padding:.75rem 1.15rem;cursor:pointer;font-size:.92rem;color:var(--muted);border-bottom:2px solid transparent;font-family:'Inter',sans-serif;font-weight:500;}
+  .tab-btn.active{color:var(--green-deep);border-bottom-color:var(--gold);font-weight:700;}
+
+  .panel{background:var(--paper);border:1px solid var(--border);border-radius:6px;padding:1.75rem;margin-bottom:1.75rem;}
+  .panel h2{margin:0 0 1.25rem;font-size:1.15rem;color:var(--green-deep);display:flex;justify-content:space-between;align-items:baseline;}
+  .panel h2 .count{font-family:'Inter',sans-serif;font-size:.75rem;color:var(--muted);font-weight:500;}
+
+  table{width:100%;border-collapse:collapse;font-size:.88rem;}
+  th, td{text-align:left;padding:.7rem .55rem;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.6px;font-weight:700;}
+  td.actions{white-space:nowrap;}
+  .badge{display:inline-block;padding:.18rem .6rem;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.3px;}
+  .badge.published{background:#e4f3ea;color:var(--success);}
+  .badge.draft{background:#f3e9d8;color:#8a6d1d;}
+  .row-gap{display:flex;gap:.5rem;flex-wrap:wrap;}
+  .msg-body{max-width:280px;white-space:pre-wrap;color:var(--muted);}
+
+  .form-actions{display:flex;gap:.6rem;margin-top:.4rem;align-items:center;}
+  .checkbox-row{display:flex;align-items:center;gap:.55rem;}
+  .checkbox-row input{width:auto;}
+  .checkbox-row label{margin:0;text-transform:none;font-size:.88rem;font-weight:500;color:var(--text);}
+  .empty-state{color:var(--muted);font-style:italic;padding:1.5rem 0;text-align:center;font-size:.9rem;}
+
+  .simulate-box{border-top:1px dashed var(--border);margin-top:1.5rem;padding-top:1.25rem;}
+  .simulate-box p{font-size:.82rem;color:var(--muted);margin:0 0 1rem;line-height:1.5;}
+
+  /* Rich text editor */
+  .rte-toolbar{display:flex;gap:.25rem;flex-wrap:wrap;border:1px solid var(--border);border-bottom:none;border-radius:4px 4px 0 0;background:#f6f3ec;padding:.4rem;}
+  .rte-toolbar button{background:#fff;border:1px solid var(--border);border-radius:3px;width:2rem;height:2rem;cursor:pointer;font-size:.85rem;color:var(--text);font-family:'Inter',sans-serif;}
+  .rte-toolbar button:hover{border-color:var(--gold);color:var(--green-deep);}
+  .rte-toolbar button.rte-b{font-weight:700;}
+  .rte-toolbar button.rte-i{font-style:italic;}
+  .rte-toolbar button.rte-u{text-decoration:underline;}
+  #postBodyEditor{
+    min-height:160px;border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;
+    padding:.75rem .8rem;font-size:.95rem;line-height:1.6;background:#fff;font-family:'Inter',sans-serif;
+  }
+  #postBodyEditor:focus{outline:2px solid var(--gold);outline-offset:-1px;}
+  #postBodyEditor p{margin:0 0 .6em;}
+  #postBodyEditor ul, #postBodyEditor ol{margin:0 0 .6em 1.2em;padding:0;}
+
+  /* Image upload */
+  .image-row{display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap;}
+  .image-row .field{flex:1;min-width:200px;margin-bottom:0;}
+  .image-preview{width:90px;height:66px;border-radius:4px;border:1px solid var(--border);background-size:cover;background-position:center;background-color:#f0ede4;flex-shrink:0;}
+  .file-btn{display:inline-block;}
+  .file-btn input[type="file"]{display:none;}
+
+  /* Dashboard */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.75rem;}
+  .stat-card{background:var(--paper);border:1px solid var(--border);border-radius:6px;padding:1.25rem;border-top:3px solid var(--gold);}
+  .stat-card .stat-num{font-family:'Playfair Display',serif;font-size:2rem;color:var(--green-deep);line-height:1;}
+  .stat-card .stat-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:.4rem;}
+  .cat-bar-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem;font-size:.85rem;}
+  .cat-bar-label{width:150px;flex-shrink:0;color:var(--text);}
+  .cat-bar-track{flex:1;background:#f0ede4;border-radius:20px;height:10px;overflow:hidden;}
+  .cat-bar-fill{background:var(--gold);height:100%;border-radius:20px;}
+  .cat-bar-count{width:1.5rem;text-align:right;color:var(--muted);flex-shrink:0;}
+  .activity-feed{list-style:none;margin:0;padding:0;}
+  .activity-feed li{display:flex;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border);font-size:.85rem;}
+  .activity-feed li:last-child{border-bottom:none;}
+  .activity-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:.4rem;flex-shrink:0;}
+  .activity-text{flex:1;color:var(--text);}
+  .activity-time{color:var(--muted);font-size:.78rem;white-space:nowrap;}
+</style>
+</head>
+<body>
+
+<div class="preview-ribbon">
+  <strong>Blog posts you publish here appear live on the website automatically</strong> — data is stored centrally on the server, so it's the same for every device and every visitor.
+</div>
+
+<header>
+  <div class="brand">
+    <h1>Ngethe & Company Advocates</h1>
+    <span class="sub">Admin Panel</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:.9rem;">
+    <a href="index.html" target="_blank" rel="noopener" style="color:var(--gold-bright);font-size:.85rem;text-decoration:none;border:1px solid var(--gold);padding:.55rem 1.1rem;border-radius:3px;">View Live Site ↗</a>
+    <button id="logoutBtn" class="hidden">Log out</button>
+  </div>
+</header>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen">
+  <span class="eyebrow">Staff Access</span>
+  <h2>Admin Login</h2>
+  <div id="loginForm">
+    <div class="field">
+      <label for="loginUsername">Username</label>
+      <input type="text" id="loginUsername" autocomplete="username" required />
+    </div>
+    <div class="field">
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" required />
+    </div>
+    <button type="button" class="primary" id="loginSubmitBtn">Log In</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+  <div class="hint">Log in with the admin username and password configured on the server (set in <code>.env</code> as <code>ADMIN_USERNAME</code> and <code>ADMIN_PASSWORD_HASH</code>).</div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<main id="dashboard" class="hidden">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dash">Dashboard</button>
+    <button class="tab-btn" data-tab="posts">Blog Posts</button>
+    <button class="tab-btn" data-tab="messages">Contact Messages</button>
+  </div>
+
+  <!-- Dashboard tab -->
+  <section id="tab-dash">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num" id="statTotalPosts">0</div><div class="stat-label">Total Posts</div></div>
+      <div class="stat-card"><div class="stat-num" id="statPublished">0</div><div class="stat-label">Published</div></div>
+      <div class="stat-card"><div class="stat-num" id="statDrafts">0</div><div class="stat-label">Drafts</div></div>
+      <div class="stat-card"><div class="stat-num" id="statMessages">0</div><div class="stat-label">Total Messages</div></div>
+      <div class="stat-card"><div class="stat-num" id="statMessagesWeek">0</div><div class="stat-label">Messages This Week</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Posts by Category</h2>
+      <div id="categoryBars"></div>
+      <div class="empty-state hidden" id="categoryBarsEmpty">No posts yet.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Recent Activity</h2>
+      <ul class="activity-feed" id="activityFeed"></ul>
+      <div class="empty-state hidden" id="activityEmpty">No activity yet.</div>
+    </div>
+  </section>
+
+  <!-- Blog posts tab -->
+  <section id="tab-posts" class="hidden">
+    <div class="panel" id="postFormPanel">
+      <h2><span id="formTitle">Add New Post</span></h2>
+      <div id="postForm">
+        <input type="hidden" id="postId" />
+        <div class="field">
+          <label for="postTitle">Title</label>
+          <input type="text" id="postTitle" required />
+        </div>
+        <div class="field">
+          <label for="postCategory">Category</label>
+          <input type="text" id="postCategory" placeholder="e.g. Taxation, Commercial Law" required />
+        </div>
+        <div class="field">
+          <label>Featured Image</label>
+          <div class="image-row">
+            <div class="field" style="margin-bottom:0;">
+              <input type="url" id="postImage" placeholder="Paste an image URL, or upload a file" />
+            </div>
+            <label class="secondary file-btn" id="uploadImageBtn" style="padding:.65rem 1.1rem;border:1px solid var(--border);border-radius:4px;cursor:pointer;font-size:.88rem;">
+              Upload file
+              <input type="file" id="postImageFile" accept="image/*" />
+            </label>
+            <div class="image-preview" id="imagePreview"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="postBodyEditor">Body</label>
+          <div class="rte-toolbar">
+            <button type="button" class="rte-b" data-cmd="bold" title="Bold">B</button>
+            <button type="button" class="rte-i" data-cmd="italic" title="Italic">I</button>
+            <button type="button" class="rte-u" data-cmd="underline" title="Underline">U</button>
+            <button type="button" data-cmd="insertUnorderedList" title="Bulleted list">•—</button>
+            <button type="button" data-cmd="insertOrderedList" title="Numbered list">1.</button>
+            <button type="button" data-cmd="createLink" title="Insert link">🔗</button>
+            <button type="button" data-cmd="removeFormat" title="Clear formatting">✕</button>
+          </div>
+          <div id="postBodyEditor" contenteditable="true"></div>
+        </div>
+        <div class="field checkbox-row">
+          <input type="checkbox" id="postPublished" checked />
+          <label for="postPublished">Published (visible on the public website)</label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="primary" id="postSubmitBtn">Save Post</button>
+          <button type="button" class="secondary hidden" id="cancelEditBtn">Cancel Edit</button>
+        </div>
+        <div class="error-msg" id="postError"></div>
+        <div class="success-msg" id="postSuccess"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>All Posts <span class="count" id="postsCount"></span></h2>
+      <table id="postsTable">
+        <thead><tr><th>Title</th><th>Category</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
+        <tbody id="postsTbody"></tbody>
+      </table>
+      <div class="empty-state hidden" id="postsEmpty">No blog posts yet. Add one above.</div>
+    </div>
+  </section>
+
+  <!-- Messages tab -->
+  <section id="tab-messages" class="hidden">
+    <div class="panel">
+      <h2>Contact Form Submissions <span class="count" id="messagesCount"></span></h2>
+      <table id="messagesTable">
+        <thead><tr><th>Received</th><th>Name</th><th>Email</th><th>Phone</th><th>Subject</th><th>Message</th></tr></thead>
+        <tbody id="messagesTbody"></tbody>
+      </table>
+      <div class="empty-state hidden" id="messagesEmpty">No messages yet.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+const el = (id) => document.getElementById(id);
+
+// Same-origin by default. If you ever host the admin panel separately from
+// the backend, set this to the backend's full URL.
+const API_BASE = '';
+const TOKEN_KEY = 'ngethe-admin:token';
+
+let posts = [];
+let messages = [];
+let activity = [];
+let pendingImageDataUrl = null;
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+      ...(options.headers || {})
+    }
+  });
+  if (res.status === 401) {
+    clearToken();
+    showLogin();
+    throw new Error('Session expired — please log in again.');
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed (${res.status})`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+async function loadState() {
+  const [postsData, messagesData, dashboardData] = await Promise.all([
+    apiFetch('/api/posts/admin?limit=500'),
+    apiFetch('/api/messages?limit=500'),
+    apiFetch('/api/dashboard')
+  ]);
+  posts = postsData.posts;
+  messages = messagesData.messages;
+  activity = dashboardData.activity;
+}
+
+// savePosts/saveMessages/logActivity are no longer needed as separate steps —
+// each create/update/delete call below hits the API directly, and the API
+// logs its own activity entries server-side.
+
+// ---------- Auth ----------
+function showLogin() {
+  el('loginScreen').classList.remove('hidden');
+  el('dashboard').classList.add('hidden');
+  el('logoutBtn').classList.add('hidden');
+}
+async function showDashboard() {
+  el('loginScreen').classList.add('hidden');
+  el('dashboard').classList.remove('hidden');
+  el('logoutBtn').classList.remove('hidden');
+  await loadState();
+  renderPosts();
+  renderMessages();
+  renderDashboard();
+}
+
+async function attemptLogin() {
+  el('loginError').textContent = '';
+  const username = el('loginUsername').value.trim();
+  const password = el('loginPassword').value;
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Invalid username or password.');
+
+    setToken(data.token);
+    el('loginUsername').value = '';
+    el('loginPassword').value = '';
+    await showDashboard();
+  } catch (err) {
+    el('loginError').textContent = err.message;
+  }
+}
+el('loginSubmitBtn').addEventListener('click', attemptLogin);
+el('loginUsername').addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptLogin(); });
+el('loginPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptLogin(); });
+el('logoutBtn').addEventListener('click', () => { clearToken(); showLogin(); });
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    el('tab-dash').classList.toggle('hidden', tab !== 'dash');
+    el('tab-posts').classList.toggle('hidden', tab !== 'posts');
+    el('tab-messages').classList.toggle('hidden', tab !== 'messages');
+    if (tab === 'dash') renderDashboard();
+  });
+});
+
+// ---------- Dashboard ----------
+function renderDashboard() {
+  const published = posts.filter((p) => p.published).length;
+  const drafts = posts.length - published;
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const messagesThisWeek = messages.filter((m) => {
+    const t = Date.parse(m.created_at.replace(' ', 'T'));
+    return !isNaN(t) && t >= weekAgo;
+  }).length;
+
+  el('statTotalPosts').textContent = posts.length;
+  el('statPublished').textContent = published;
+  el('statDrafts').textContent = drafts;
+  el('statMessages').textContent = messages.length;
+  el('statMessagesWeek').textContent = messagesThisWeek;
+
+  const byCategory = {};
+  posts.forEach((p) => { byCategory[p.category] = (byCategory[p.category] || 0) + 1; });
+  const maxCount = Math.max(1, ...Object.values(byCategory));
+  const barsEl = el('categoryBars');
+  barsEl.innerHTML = '';
+  el('categoryBarsEmpty').classList.toggle('hidden', Object.keys(byCategory).length > 0);
+  Object.entries(byCategory).sort((a, b) => b[1] - a[1]).forEach(([cat, count]) => {
+    const row = document.createElement('div');
+    row.className = 'cat-bar-row';
+    row.innerHTML = `
+      <div class="cat-bar-label">${escapeHtml(cat)}</div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(count / maxCount) * 100}%"></div></div>
+      <div class="cat-bar-count">${count}</div>`;
+    barsEl.appendChild(row);
+  });
+
+  const feedEl = el('activityFeed');
+  feedEl.innerHTML = '';
+  el('activityEmpty').classList.toggle('hidden', activity.length > 0);
+  activity.forEach((a) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span class="activity-dot"></span>
+      <span class="activity-text">${escapeHtml(a.text)}</span>
+      <span class="activity-time">${timeAgo(a.time)}</span>`;
+    feedEl.appendChild(li);
+  });
+}
+
+function timeAgo(iso) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// ---------- Rich text editor ----------
+document.querySelectorAll('.rte-toolbar button').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const cmd = btn.dataset.cmd;
+    el('postBodyEditor').focus();
+    if (cmd === 'createLink') {
+      const url = prompt('Link URL:');
+      if (url) document.execCommand(cmd, false, url);
+    } else {
+      document.execCommand(cmd, false, null);
+    }
+  });
+});
+
+// ---------- Image upload ----------
+el('postImageFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingImageDataUrl = reader.result;
+    el('postImage').value = '';
+    el('imagePreview').style.backgroundImage = `url('${pendingImageDataUrl}')`;
+  };
+  reader.readAsDataURL(file);
+});
+el('postImage').addEventListener('input', () => {
+  pendingImageDataUrl = null;
+  const url = el('postImage').value.trim();
+  el('imagePreview').style.backgroundImage = url ? `url('${url}')` : 'none';
+});
+
+
+function renderPosts() {
+  const tbody = el('postsTbody');
+  tbody.innerHTML = '';
+  el('postsEmpty').classList.toggle('hidden', posts.length > 0);
+  el('postsCount').textContent = posts.length ? `${posts.length} total` : '';
+
+  posts.slice().sort((a,b) => (a.updated_at < b.updated_at ? 1 : -1)).forEach((post) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(post.title)}</td>
+      <td>${escapeHtml(post.category)}</td>
+      <td><span class="badge ${post.published ? 'published' : 'draft'}">${post.published ? 'Published' : 'Draft'}</span></td>
+      <td>${escapeHtml(post.updated_at)}</td>
+      <td class="actions row-gap">
+        <button class="secondary" data-edit="${post.id}">Edit</button>
+        <button class="danger" data-delete="${post.id}">Delete</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('[data-edit]').forEach((btn) => btn.addEventListener('click', () => editPost(btn.dataset.edit)));
+  tbody.querySelectorAll('[data-delete]').forEach((btn) => btn.addEventListener('click', () => deletePost(btn.dataset.delete)));
+}
+
+function editPost(id) {
+  const post = posts.find((p) => String(p.id) === String(id));
+  if (!post) return;
+  el('postId').value = post.id;
+  el('postTitle').value = post.title;
+  el('postCategory').value = post.category;
+  el('postImage').value = post.image_url || '';
+  pendingImageDataUrl = null;
+  el('imagePreview').style.backgroundImage = post.image_url ? `url('${post.image_url}')` : 'none';
+  el('postBodyEditor').innerHTML = post.body;
+  el('postPublished').checked = !!post.published;
+  el('formTitle').textContent = `Editing: ${post.title}`;
+  el('postSubmitBtn').textContent = 'Update Post';
+  el('cancelEditBtn').classList.remove('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+el('cancelEditBtn').addEventListener('click', resetPostForm);
+
+function resetPostForm() {
+  el('postId').value = '';
+  el('postTitle').value = '';
+  el('postCategory').value = '';
+  el('postImage').value = '';
+  el('postBodyEditor').innerHTML = '';
+  el('postImageFile').value = '';
+  el('imagePreview').style.backgroundImage = 'none';
+  pendingImageDataUrl = null;
+  el('postPublished').checked = true;
+  el('formTitle').textContent = 'Add New Post';
+  el('postSubmitBtn').textContent = 'Save Post';
+  el('cancelEditBtn').classList.add('hidden');
+  el('postError').textContent = '';
+  el('postSuccess').textContent = '';
+}
+
+el('postSubmitBtn').addEventListener('click', async () => {
+  el('postError').textContent = '';
+  el('postSuccess').textContent = '';
+
+  const title = el('postTitle').value.trim();
+  const category = el('postCategory').value.trim();
+  const body = el('postBodyEditor').innerHTML.trim();
+  const bodyText = el('postBodyEditor').textContent.trim();
+  if (!title || !category || !bodyText) {
+    el('postError').textContent = 'Title, category, and body are required.';
+    return;
+  }
+
+  const id = el('postId').value;
+  const imageUrl = pendingImageDataUrl || el('postImage').value.trim();
+  const payload = {
+    title, category, body,
+    image_url: imageUrl,
+    published: el('postPublished').checked ? 1 : 0
+  };
+
+  try {
+    if (id) {
+      const updated = await apiFetch(`/api/posts/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      const idx = posts.findIndex((p) => String(p.id) === String(id));
+      if (idx > -1) posts[idx] = updated;
+      el('postSuccess').textContent = 'Post updated.';
+    } else {
+      const created = await apiFetch('/api/posts', { method: 'POST', body: JSON.stringify(payload) });
+      posts.push(created);
+      el('postSuccess').textContent = 'Post created.';
+    }
+    resetPostForm();
+    renderPosts();
+    renderDashboard();
+  } catch (err) {
+    el('postError').textContent = err.message || 'Could not save post.';
+  }
+});
+
+async function deletePost(id) {
+  if (!confirm('Delete this post? This cannot be undone.')) return;
+  try {
+    await apiFetch(`/api/posts/${id}`, { method: 'DELETE' });
+    posts = posts.filter((p) => String(p.id) !== String(id));
+    renderPosts();
+    renderDashboard();
+  } catch (err) {
+    alert(err.message || 'Could not delete post.');
+  }
+}
+
+// ---------- Contact messages ----------
+function renderMessages() {
+  const tbody = el('messagesTbody');
+  tbody.innerHTML = '';
+  el('messagesEmpty').classList.toggle('hidden', messages.length > 0);
+  el('messagesCount').textContent = messages.length ? `${messages.length} total` : '';
+
+  messages.slice().reverse().forEach((m) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escapeHtml(m.created_at)}</td>
+      <td>${escapeHtml(m.full_name)}</td>
+      <td>${escapeHtml(m.email)}</td>
+      <td>${escapeHtml(m.phone)}</td>
+      <td>${escapeHtml(m.subject)}</td>
+      <td class="msg-body">${escapeHtml(m.message)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(str) {
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+(async function init() {
+  if (getToken()) {
+    try {
+      await showDashboard();
+      return;
+    } catch {
+      clearToken();
+    }
+  }
+  showLogin();
+})();
+</script>
+</body>
+</html>
